@@ -1,18 +1,18 @@
 import express from "express";
 import cors from "cors";
-import exampleRoute from "./routes/exampleRoute";
+import electricityStats from "./routes/electricityStats";
+import "./config";  // Varmistetaan, että ympäristömuuttujat on ladattu
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors()); // Salli pyynnöt frontendiltä
-app.use(express.json()); // JSON-datan käsittely
+app.use(cors());
+app.use(express.json());
 
-// Käytä reittiä
-app.use("/api", exampleRoute);
+// API-routes
+app.use("/api/electricity", electricityStats);
 
-// Käynnistä palvelin
 app.listen(port, () => {
-    console.log(`Backend running on http://localhost:${port}`);
+  console.log(`Server running at http://localhost:${port}`);
 });
