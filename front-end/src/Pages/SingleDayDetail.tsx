@@ -47,7 +47,7 @@ const SingleDayDetail: React.FC = () => {
                 {dayData ? (
                     <div>
                         <p>Total Consumption (kWh): {dayData.total_consumption ?? 'No data available'}</p>
-                        <p>Total Production (kWh): {dayData.total_production ?? 'No data available'}</p>
+                        <p>Total Production (MWh): {dayData.total_production ?? 'No data available'}</p>
                         <p>Average Price (€): {dayData.avg_price ?? 'No data available'}</p>
                         <p>Peak Consumption Hour: {dayData.peak_consumption_hour ?? 'No data available'}</p>
                         <p>Cheapest Hours: {dayData.cheapest_hours.join(", ") ?? 'No data available'}</p>

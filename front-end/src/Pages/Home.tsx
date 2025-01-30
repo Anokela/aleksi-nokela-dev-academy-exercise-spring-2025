@@ -37,7 +37,7 @@ const Home: React.FC = () => {
                     <tr>
                         <th>Date</th>
                         <th>Total Consumption (kWh)</th>
-                        <th>Total Production (MWh/h)</th>
+                        <th>Total Production (MWh)</th>
                         <th>Average Price (€)</th>
                         <th>Longest Negative Price Streak (h)</th>
                     </tr>
