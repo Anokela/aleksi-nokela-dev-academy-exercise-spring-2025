@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import electricityStats from "./routes/electricityStats";
+import getElectricityData from "./routes/getElectricityData";
 import "./config";  // Varmistetaan, että ympäristömuuttujat on ladattu
 
 const app = express();
@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // API-routes
-app.use("/api/electricity", electricityStats);
+app.use("/api/getElectricityData", getElectricityData);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

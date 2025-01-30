@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { fetchElectricityStats } from "../api/electricityApi";
+import { fetchElectricityData } from '../api/getElectricityDataApi'
+import { Link } from 'react-router-dom';
 
-interface ElectricityStats {
+interface ElectricityData {
     date: string;
     total_consumption: string | null;
     total_production: string | null;
@@ -10,15 +11,15 @@ interface ElectricityStats {
 }
 
 const Home: React.FC = () => {
-    const [stats, setStats] = useState<ElectricityStats[]>([]);
+    const [data, setData] = useState<ElectricityData[]>([]);
     const [error, setError] = useState<string | null>(null);
     const NO_DATA_MESSAGE: string = "No data available";
 
     useEffect(() => {
         async function getData() {
             try {
-                const data = await fetchElectricityStats();
-                setStats(data);
+                const fetchData = await fetchElectricityData();
+                setData(fetchData);
             } catch (err) {
                 setError("Failed to load electricity data.");
             }
@@ -26,7 +27,7 @@ const Home: React.FC = () => {
         getData();
     }, []);
     
-    console.log(stats)
+    console.log(data)
     return (
         <div>
             <h1>Electricity Statistics</h1>
@@ -42,9 +43,11 @@ const Home: React.FC = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {stats.map((day, index) => (
+                    {data.map((day, index) => (
                         <tr key={index}>
-                            <td>{day.date}</td>
+                           <td>
+                                <Link to={`/detail/${day.date}`}>{day.date}</Link>
+                            </td>
                             <td>{day.total_consumption ? day.total_consumption : NO_DATA_MESSAGE}</td>
                             <td>{day.total_production ? day.total_production : NO_DATA_MESSAGE}</td>
                             <td>{day.avg_price ? day.avg_price : NO_DATA_MESSAGE}</td>
