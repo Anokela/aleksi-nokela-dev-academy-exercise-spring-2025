@@ -1,6 +1,6 @@
 import './App.css';
 import Home from './Pages/Home';
-import SingleDayDetail from './Pages/singleDayDetail';
+import SingleDayDetail from './Pages/SingleDayDetail';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 function App() {

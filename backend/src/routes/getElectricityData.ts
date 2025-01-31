@@ -3,53 +3,83 @@ import pool from "../db"; // Tuodaan pool tietokantayhteys config.ts:stä
 
 const router = Router();
 
-// Fetch all daily stats
 router.get("/stats", async (req, res: Response) => {
+  const page = Number(req.query.page) || 1;   // Muunnetaan numeroksi, oletus 1
+  let limit = Number(req.query.limit); // Ei oletusarvoa täällä
+
+  // Tarkistetaan, onko limit 0, ja jos on, asetetaan se suoraan
+  if (limit === 0) {
+    limit = 0;
+  } else {
+    limit = limit || 25;  // Jos limit on väärä, asetetaan se 25:ksi
+  }
+
+  const offset = (page - 1) * limit;  // Lasketaan mistä rivistä aloitetaan
+
+  console.log('Page:', page); // Debugging
+  console.log('Limitsourcewwwww:', req.query.limit); // Debugging
+
+  // Tarkistetaan, haetaanko kaikki rivit (jos limit=0, poistetaan sivutus)
+
+  const fetchAll = limit === 0;
+
+  // Tarkistetaan, haetaanko kaikki rivit
+  if (fetchAll) {
+    console.log('Haetaan kaikki rivit');  // Debugging
+  } else {
+    console.log(`Haetaan sivu ${page} ja rajoitetaan ${limit} rivillä`);  // Debugging
+  }
+
+
+
   try {
     const result = await pool.query(`
-            WITH NegativeStreaks AS (
-                SELECT
-                    date,
-                    consumptionAmount,
-                    productionAmount,
-                    hourlyPrice,
-                    startTime,
-                    CASE WHEN hourlyPrice < 0 THEN 1 ELSE 0 END AS is_negative
-                FROM electricityData
-            ),
-            StreaksWithGroup AS (
-                SELECT
-                    date,
-                    startTime,
-                    is_negative,
-                    SUM(CASE WHEN is_negative = 1 THEN 0 ELSE 1 END) OVER (
-                        PARTITION BY date ORDER BY startTime ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-                    ) AS streak_group
-                FROM NegativeStreaks
-            ),
-            StreakDurations AS (
-                SELECT
-                    date,
-                    MAX(streak_length) AS longest_negative_streak  -- Varmistetaan vain yksi rivi per päivä
-                FROM (
-                    SELECT date, streak_group, COUNT(*) AS streak_length
-                    FROM StreaksWithGroup
-                    WHERE is_negative = 1
-                    GROUP BY date, streak_group
-                ) AS subquery
-                GROUP BY date
-            )
-            SELECT
-                TO_CHAR(e.date, 'YYYY-MM-DD') AS date,
-                SUM(e.consumptionAmount) AS total_consumption,
-                SUM(e.productionAmount) AS total_production,
-                AVG(e.hourlyPrice) AS avg_price,
-                COALESCE(s.longest_negative_streak, 0) AS longest_negative_streak
-            FROM electricityData e
-            LEFT JOIN StreakDurations s ON e.date = s.date
-            GROUP BY e.date, s.longest_negative_streak
-            ORDER BY e.date;
-          `);
+      WITH NegativeStreaks AS (
+          SELECT
+              date,
+              consumptionAmount,
+              productionAmount,
+              hourlyPrice,
+              startTime,
+              CASE WHEN hourlyPrice < 0 THEN 1 ELSE 0 END AS is_negative
+          FROM electricityData
+      ),
+      StreaksWithGroup AS (
+          SELECT
+              date,
+              startTime,
+              is_negative,
+              SUM(CASE WHEN is_negative = 1 THEN 0 ELSE 1 END) OVER (
+                  PARTITION BY date ORDER BY startTime ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+              ) AS streak_group
+          FROM NegativeStreaks
+      ),
+      StreakDurations AS (
+          SELECT
+              date,
+              MAX(streak_length) AS longest_negative_streak  -- Varmistetaan vain yksi rivi per päivä
+          FROM (
+              SELECT date, streak_group, COUNT(*) AS streak_length
+              FROM StreaksWithGroup
+              WHERE is_negative = 1
+              GROUP BY date, streak_group
+          ) AS subquery
+          GROUP BY date
+      )
+      SELECT
+          TO_CHAR(e.date, 'YYYY-MM-DD') AS date,
+          SUM(e.consumptionAmount) AS total_consumption,
+          SUM(e.productionAmount) AS total_production,
+          AVG(e.hourlyPrice) AS avg_price,
+          COALESCE(s.longest_negative_streak, 0) AS longest_negative_streak
+      FROM electricityData e
+      LEFT JOIN StreakDurations s ON e.date = s.date
+      GROUP BY e.date, s.longest_negative_streak
+      ORDER BY e.date
+      ${fetchAll ? "" : "LIMIT $1 OFFSET $2"};  -- Poistetaan LIMIT/OFFSET jos haetaan kaikki
+    `,
+      fetchAll ? [] : [limit, offset] // Parametrit vain jos sivutus käytössä
+    );
 
     res.json(result.rows);
   } catch (error) {
@@ -64,34 +94,36 @@ router.get("/stats/:date", async (req: Request<{ date: string }>, res: any) => {
   try {
     const result = await pool.query(`
       WITH DayData AS (
-        SELECT 
-            date,
-            startTime,
-            consumptionAmount,
-            productionAmount * 1000 AS productionAmount_kWh,  -- Muutetaan MW → kWh
-            hourlyPrice
-        FROM electricityData
-        WHERE date = $1
-    )
+          SELECT 
+              date,
+              startTime,
+              consumptionAmount,
+              productionAmount * 1000 AS productionAmount_kWh,  -- Muutetaan MW → kWh
+              hourlyPrice
+          FROM electricityData
+          WHERE date = $1
+      )
 
-    SELECT
-        TO_CHAR(date, 'YYYY-MM-DD') AS date,
-        SUM(consumptionAmount) AS total_consumption,
-        SUM(productionAmount_kWh) / 1000 AS total_production, -- Muutetaan takaisin MW-yksikköön
-        AVG(hourlyPrice) AS avg_price,
+      SELECT
+          TO_CHAR(date, 'YYYY-MM-DD') AS date,
+          SUM(consumptionAmount) AS total_consumption,
+          SUM(productionAmount_kWh) / 1000 AS total_production, -- Muutetaan takaisin MW-yksikköön
+          AVG(hourlyPrice) AS avg_price,
 
-        -- Peak consumption hour: tunti, jolloin kulutus on suurin suhteessa tuotantoon
-        (SELECT TO_CHAR(startTime, 'HH24:MI') 
-        FROM DayData 
-        ORDER BY (consumptionAmount / NULLIF(productionAmount_kWh, 0)) DESC -- Suhde kulutus / tuotanto
-        LIMIT 1
-        ) AS peak_consumption_hour,
+          -- Peak consumption hour (vain jos on kulutustietoja)
+          (
+              SELECT TO_CHAR(startTime, 'HH24:MI')
+              FROM DayData 
+              WHERE consumptionAmount IS NOT NULL  -- 🔹 Suodatetaan pois NULL-arvot
+              ORDER BY (consumptionAmount / NULLIF(productionAmount_kWh, 0)) DESC 
+              LIMIT 1
+          ) AS peak_consumption_hour,
 
-        -- Cheapest hours pelkäksi kellonajaksi (3 halvimman tunnin lista)
-        ARRAY_AGG(TO_CHAR(startTime, 'HH24:MI') ORDER BY hourlyPrice ASC) AS cheapest_hours
+          -- Cheapest hours pelkäksi kellonajaksi (3 halvimman tunnin lista)
+          ARRAY_AGG(TO_CHAR(startTime, 'HH24:MI') ORDER BY hourlyPrice ASC) AS cheapest_hours
 
-    FROM DayData
-    GROUP BY date;
+      FROM DayData
+      GROUP BY date;
     `, [date]);
 
     if (result.rows.length === 0) {
