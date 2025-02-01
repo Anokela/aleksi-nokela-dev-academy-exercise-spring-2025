@@ -2,29 +2,37 @@ import { Router, Request, Response } from "express";
 import pool from "../db"; // Tuodaan pool tietokantayhteys config.ts:stä
 
 const router = Router();
-
+// Fetch stats for all dates
+// Fetch stats for all dates
 router.get("/stats", async (req, res: Response) => {
   const page = Number(req.query.page) || 1;   // Muunnetaan numeroksi, oletus 1
-  let limit = Number(req.query.limit); // Ei oletusarvoa täällä
+  let limit = Number(req.query.limit); 
 
-  // Tarkistetaan, onko limit 0, ja jos on, asetetaan se suoraan
   if (limit === 0) {
     limit = 0;
   } else {
-    limit = limit || 25;  // Jos limit on väärä, asetetaan se 25:ksi
+    limit = limit || 25;  // Oletus 25
   }
 
-  const offset = (page - 1) * limit;  // Lasketaan mistä rivistä aloitetaan
-
-  // Tarkistetaan, haetaanko kaikki rivit (jos limit=0, poistetaan sivutus)
-
+  const offset = (page - 1) * limit;
   const fetchAll = limit === 0;
 
-
-  // Lisätään suodatusmahdollisuus
   const validOnly = req.query.validOnly === "true"; 
+  const year = req.query.year ? Number(req.query.year) : null;
 
   try {
+    let whereConditions = [];
+
+    if (validOnly) {
+      whereConditions.push("e.consumptionAmount IS NOT NULL AND e.productionAmount IS NOT NULL AND e.hourlyPrice IS NOT NULL");
+    }
+
+    if (year) {
+      whereConditions.push(`EXTRACT(YEAR FROM e.date) = ${year}`);
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(" AND ")}` : "";
+
     const query = `
       WITH NegativeStreaks AS (
           SELECT
@@ -66,7 +74,7 @@ router.get("/stats", async (req, res: Response) => {
           COALESCE(s.longest_negative_streak, 0) AS longest_negative_streak
       FROM electricityData e
       LEFT JOIN StreakDurations s ON e.date = s.date
-      ${validOnly ? "WHERE e.consumptionAmount IS NOT NULL AND e.productionAmount IS NOT NULL AND e.hourlyPrice IS NOT NULL" : ""}
+      ${whereClause}  -- Lisätty suodatus tähän
       GROUP BY e.date, s.longest_negative_streak
       ORDER BY e.date
       ${fetchAll ? "" : "LIMIT $1 OFFSET $2"};

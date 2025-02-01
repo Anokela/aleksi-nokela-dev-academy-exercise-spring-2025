@@ -21,6 +21,8 @@ interface ElectricityDataContextType {
     searchTerm: string;
     sortColumn: string | null;
     sortDirection: "asc" | "desc";
+    year: number | null;
+    setYear: (year: number | null) => void;
     sortData: (column: keyof ElectricityData) => void;
     setSearchTerm: (term: string) => void;
     toggleFilter: () => void;
@@ -42,6 +44,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
     const [allDataLoaded, setAllDataLoaded] = useState<boolean>(false);
     const [validOnly, setValidOnly] = useState<boolean>(true); // set to fetch only rows with valid data by default
     const [itemsLoaded, setItemsLoaded] = useState<number>(25);
+    const [year, setYear] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState<string>('');  // Hakusanatila
     const [pageInitiated, setPageInitiated] = useState(false);
     const [sortColumn, setSortColumn] = useState<string | null>(null);  // Sarake, jota lajitellaan
@@ -60,7 +63,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             reloadFilteredData();
         }
 
-    }, [validOnly]); // Kun filtteri muuttuu, haetaan data uudestaan
+    }, [validOnly,year]); // Kun filtteri muuttuu, haetaan data uudestaan
 
     // Hakee ja suodattaa dataa hakusanan mukaan
     useEffect(() => {
@@ -81,7 +84,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
     async function fetchInitialData() {
         setLoading(true);
         try {
-            const fetchData = await fetchElectricityData(1, limit, validOnly);
+            const fetchData = await fetchElectricityData(1, limit, validOnly, year);
             setData(fetchData);
             setSearchFilteredData(fetchData);
             setPage(2); // Seuraava haku alkaa sivulta 2
@@ -126,7 +129,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
     async function reloadFilteredData() {
         setLoading(true);
         try {
-            const fetchData = await fetchElectricityData(1, itemsLoaded, validOnly);
+            const fetchData = await fetchElectricityData(1, itemsLoaded, validOnly, year);
             setData(fetchData);
             setSearchFilteredData(fetchData);
             setPage(Math.ceil(itemsLoaded / limit) + 1); // Lasketaan seuraava sivu
@@ -141,7 +144,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
     async function loadMoreData() {
         setLoading(true);
         try {
-            const fetchData = await fetchElectricityData(page, limit, validOnly);
+            const fetchData = await fetchElectricityData(page, limit, validOnly, year);
             setData((prev) => [...prev, ...fetchData]); // Lisätään uudet rivit perään
             setSearchFilteredData((prev) => [...prev, ...fetchData]);
             setPage((prev) => prev + 1); // Siirrytään seuraavalle sivulle
@@ -162,7 +165,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         console.log('Ladataan kaikki data');  // Debugging
         setLoading(true);
         try {
-            const fetchData = await fetchElectricityData(1, 0, validOnly); // 0 hakee kaikki rivit
+            const fetchData = await fetchElectricityData(1, 0, validOnly, year); // 0 hakee kaikki rivit
             console.log('Vastaanotettu data', fetchData);  // Tarkistetaan, että saamme dataa
             setData(fetchData); // Korvataan data, koska halutaan näyttää kaikki kerralla
             setSearchFilteredData(fetchData);
@@ -185,7 +188,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
 
     return (
         <ElectricityDataContext.Provider
-            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, sortColumn, sortDirection, sortData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
+            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, sortColumn, sortDirection, year, setYear, sortData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
         >
             {children}
         </ElectricityDataContext.Provider>

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import DataGraph from '../Components/DataGraph'; // Oletetaan, että graafi on täällä
 
 const Home: React.FC = () => {
-    const { error, loading, allDataLoaded, validOnly, searchFilteredData, searchTerm, sortColumn, sortDirection, sortData, setSearchTerm, toggleFilter, fetchInitialData, loadMoreData, loadAllData } = useElectricityData();
+    const { error, loading, allDataLoaded, validOnly, searchFilteredData, searchTerm, sortColumn, sortDirection, year, setYear, sortData, setSearchTerm, toggleFilter, fetchInitialData, loadMoreData, loadAllData } = useElectricityData();
     const NO_DATA_MESSAGE = "No data available";
 
     // Tallennetaan scrollin sijainti ennen siirtymistä pois
@@ -36,6 +36,19 @@ const Home: React.FC = () => {
                 <input type="checkbox" checked={validOnly} onChange={toggleFilter} />
                 Show only complete data
             </label>
+            <div>
+                <label>
+                    Select Year:
+                    <select value={year ?? ""} onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}>
+                        <option value="">All years</option>
+                        <option value="2020">2020</option>
+                        <option value="2021">2021</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </label>
+            </div>
             <table border={1}>
                 <thead>
                     <tr>
