@@ -128,6 +128,21 @@ router.get("/stats/:date", async (req: Request<{ date: string }>, res: any) => {
     const cheapestHours = result.rows[0].cheapest_hours.slice(0, 3);
     result.rows[0].cheapest_hours = cheapestHours;
 
+    // Haetaan myös tuntikohtainen raakadata erikseen
+    const hourlyDataResult = await pool.query(`
+      SELECT 
+          TO_CHAR(startTime, 'HH24:MI') AS time,
+          consumptionAmount AS consumption,
+          productionAmount * 1000 AS production,  -- MW → kWh
+          hourlyPrice AS price
+      FROM electricityData
+      WHERE date = $1
+      ORDER BY startTime;
+    `, [date]);
+
+    // Lisätään raakadata JSON-vastaukseen
+    result.rows[0].hourly_data = hourlyDataResult.rows;
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Error fetching single day electricity stats:", error);

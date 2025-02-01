@@ -33,6 +33,8 @@ const SingleDayDetail: React.FC = () => {
         getData();
     }, [date]);
 
+    console.log('Data', dayData);
+
     if (error) {
         return (
             <div>
