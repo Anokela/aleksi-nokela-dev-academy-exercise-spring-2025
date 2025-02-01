@@ -17,7 +17,7 @@ const SingleDayDetail: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     const navigate = useNavigate(); // käytetään useNavigate hookkia
-    console.log('Päivämäärä', date);
+
     useEffect(() => {
         async function getData() {
             try {

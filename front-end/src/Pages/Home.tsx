@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useElectricityData } from "../context/ElectricityDataContext";
 import { Link } from "react-router-dom";
+import DataGraph from '../Components/DataGraph'; // Oletetaan, että graafi on täällä
 
 const Home: React.FC = () => {
     const { error, loading, allDataLoaded, validOnly, searchFilteredData, searchTerm, sortColumn, sortDirection, sortData, setSearchTerm, toggleFilter, fetchInitialData, loadMoreData, loadAllData } = useElectricityData();
@@ -23,6 +24,7 @@ const Home: React.FC = () => {
     return (
         <div>
             <h1>Electricity Statistics</h1>
+            <DataGraph />
             {error && <p style={{ color: "red" }}>{error}</p>}
             <input
                 type="text"
