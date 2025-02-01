@@ -11,13 +11,15 @@ interface ElectricityData {
 }
 
 interface ElectricityDataContextType {
-    data: ElectricityData[];
+    searchFilteredData: ElectricityData[];
     error: string | null;
     page: number;
     loading: boolean;
     allDataLoaded: boolean;
     validOnly: boolean;
     itemsLoaded: number;
+    searchTerm: string;
+    setSearchTerm: (term: string) => void;
     toggleFilter: () => void;
     loadMoreData: () => Promise<void>;
     loadAllData: () => Promise<void>;
@@ -30,12 +32,14 @@ const ElectricityDataContext = createContext<ElectricityDataContextType | undefi
 // Provider-komponentti
 export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [data, setData] = useState<ElectricityData[]>([]);
+    const [searchFilteredData, setSearchFilteredData] = useState<ElectricityData[]>([]); // Filtteröity data
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState<number>(1);
     const [loading, setLoading] = useState<boolean>(false);
     const [allDataLoaded, setAllDataLoaded] = useState<boolean>(false);
     const [validOnly, setValidOnly] = useState<boolean>(false);
     const [itemsLoaded, setItemsLoaded] = useState<number>(25);
+    const [searchTerm, setSearchTerm] = useState<string>('');  // Hakusanatila
     const [pageInitiated, setPageInitiated] = useState(false);
     const limit: number = 25;
 
@@ -53,11 +57,28 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
 
     }, [validOnly]); // Kun filtteri muuttuu, haetaan data uudestaan
 
+    // Hakee ja suodattaa dataa hakusanan mukaan
+    useEffect(() => {
+        if (searchTerm) {
+            const filtered = data.filter((item) =>
+                item.date.includes(searchTerm) ||
+                item.total_consumption?.includes(searchTerm) ||
+                item.total_production?.includes(searchTerm) ||
+                item.avg_price?.includes(searchTerm) ||
+                item.longest_negative_streak.toString().includes(searchTerm)
+            );
+            setSearchFilteredData(filtered);
+        } else {
+            setSearchFilteredData(data);  // Jos ei hakusanaa, palautetaan kaikki data
+        }
+    }, [searchTerm, data]);
+
     async function fetchInitialData() {
         setLoading(true);
         try {
             const fetchData = await fetchElectricityData(1, limit, validOnly);
             setData(fetchData);
+            setSearchFilteredData(fetchData); 
             setPage(2); // Seuraava haku alkaa sivulta 2
             setItemsLoaded(limit); // Ensimmäinen haku = 25 riviä
             setAllDataLoaded(false); // Resetoi "kaikki ladattu" tilan
@@ -74,6 +95,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         try {
             const fetchData = await fetchElectricityData(1, itemsLoaded, validOnly);
             setData(fetchData);
+            setSearchFilteredData(fetchData); 
             setPage(Math.ceil(itemsLoaded / limit) + 1); // Lasketaan seuraava sivu
         } catch (err) {
             setError("Failed to load electricity data.");
@@ -88,6 +110,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         try {
             const fetchData = await fetchElectricityData(page, limit, validOnly);
             setData((prev) => [...prev, ...fetchData]); // Lisätään uudet rivit perään
+            setSearchFilteredData((prev) => [...prev, ...fetchData]); 
             setPage((prev) => prev + 1); // Siirrytään seuraavalle sivulle
             setItemsLoaded((prev) => prev + fetchData.length);
         } catch (err) {
@@ -105,6 +128,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             const fetchData = await fetchElectricityData(1, 0, validOnly); // 0 hakee kaikki rivit
             console.log('Vastaanotettu data', fetchData);  // Tarkistetaan, että saamme dataa
             setData(fetchData); // Korvataan data, koska halutaan näyttää kaikki kerralla
+            setSearchFilteredData(fetchData); 
             setAllDataLoaded(true); // Merkitään, että kaikki data on ladattu
             setItemsLoaded(fetchData.length);
             setPage(1); // Nollataan sivutus, ettei Load More riko logiikkaa
@@ -124,7 +148,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
 
     return (
         <ElectricityDataContext.Provider
-            value={{ data, error, page, loading, allDataLoaded, validOnly, itemsLoaded, toggleFilter, loadMoreData, loadAllData, fetchInitialData }}
+            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
         >
             {children}
         </ElectricityDataContext.Provider>

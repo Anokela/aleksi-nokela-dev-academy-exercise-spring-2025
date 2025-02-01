@@ -3,7 +3,7 @@ import { useElectricityData } from "../context/ElectricityDataContext";
 import { Link } from "react-router-dom";
 
 const Home: React.FC = () => {
-    const { data, error, loading, allDataLoaded, validOnly, toggleFilter, fetchInitialData, loadMoreData, loadAllData } = useElectricityData();
+    const { error, loading, allDataLoaded, validOnly, searchFilteredData, searchTerm, setSearchTerm, toggleFilter, fetchInitialData, loadMoreData, loadAllData } = useElectricityData();
     const NO_DATA_MESSAGE = "No data available";
 
      // Tallennetaan scrollin sijainti ennen siirtymistä pois
@@ -24,6 +24,12 @@ const Home: React.FC = () => {
         <div>
             <h1>Electricity Statistics</h1>
             {error && <p style={{ color: "red" }}>{error}</p>}
+            <input
+                type="text"
+                value={searchTerm}
+                placeholder="Search..."
+                onChange={(e) => setSearchTerm(e.target.value)} // Päivittää hakusanan
+            />
             <label>
                 <input type="checkbox" checked={validOnly} onChange={toggleFilter} />
                 Show only complete data
@@ -40,7 +46,7 @@ const Home: React.FC = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.map((day, index) => (
+                    {searchFilteredData.map((day, index) => (
                         <tr key={index}>
                             <td>{index + 1}</td>
                             <td><Link to={`/detail/${day.date}`} onClick={saveScrollPosition}>{day.date}</Link></td>
