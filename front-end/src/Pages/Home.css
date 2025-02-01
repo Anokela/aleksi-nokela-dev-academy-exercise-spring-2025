@@ -1,0 +1,26 @@
+/* Flexbox layout for header area */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header input[type="text"] {
+    width: 40%;  /* Hakukenttä vie vasemman puolen */
+}
+
+.filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 55%;  /* Suodattimet vievät oikean puolen */
+}
+
+.filters label {
+    margin-right: 15px;
+}
+
+.select-year {
+    width: 150px;
+}

@@ -29,6 +29,8 @@ interface ElectricityDataContextType {
     loadMoreData: () => Promise<void>;
     loadAllData: () => Promise<void>;
     fetchInitialData: () => Promise<void>;
+    clearSearchInput: () => void;
+    clearFilters: () => void;
 }
 
 // Context
@@ -184,11 +186,20 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         setValidOnly(!validOnly);
         setData([]);
         setPage(1);
-    }
+    };
+
+    function clearSearchInput() {
+        setSearchTerm('');
+    };
+
+    function clearFilters() {
+        setValidOnly(false);
+        setYear(null);
+    };
 
     return (
         <ElectricityDataContext.Provider
-            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, sortColumn, sortDirection, year, setYear, sortData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
+            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, sortColumn, sortDirection, year,clearSearchInput, clearFilters, setYear, sortData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
         >
             {children}
         </ElectricityDataContext.Provider>

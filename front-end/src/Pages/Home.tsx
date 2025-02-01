@@ -2,9 +2,10 @@ import React, { useEffect } from "react";
 import { useElectricityData } from "../context/ElectricityDataContext";
 import { Link } from "react-router-dom";
 import DataGraph from '../Components/DataGraph'; // Oletetaan, että graafi on täällä
+import './Home.css';
 
 const Home: React.FC = () => {
-    const { error, loading, allDataLoaded, validOnly, searchFilteredData, searchTerm, sortColumn, sortDirection, year, setYear, sortData, setSearchTerm, toggleFilter, fetchInitialData, loadMoreData, loadAllData } = useElectricityData();
+    const { error, loading, allDataLoaded, validOnly, searchFilteredData, searchTerm, sortColumn, sortDirection, year, clearFilters, clearSearchInput, setYear, sortData, setSearchTerm, toggleFilter, fetchInitialData, loadMoreData, loadAllData } = useElectricityData();
     const NO_DATA_MESSAGE = "No data available";
 
     // Tallennetaan scrollin sijainti ennen siirtymistä pois
@@ -26,28 +27,45 @@ const Home: React.FC = () => {
             <h1>Electricity Statistics</h1>
             <DataGraph />
             {error && <p style={{ color: "red" }}>{error}</p>}
-            <input
-                type="text"
-                value={searchTerm}
-                placeholder="Search..."
-                onChange={(e) => setSearchTerm(e.target.value)} // Päivittää hakusanan
-            />
-            <label>
-                <input type="checkbox" checked={validOnly} onChange={toggleFilter} />
-                Show only complete data
-            </label>
-            <div>
-                <label>
-                    Select Year:
-                    <select value={year ?? ""} onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}>
-                        <option value="">All years</option>
-                        <option value="2020">2020</option>
-                        <option value="2021">2021</option>
-                        <option value="2022">2022</option>
-                        <option value="2023">2023</option>
-                        <option value="2024">2024</option>
-                    </select>
-                </label>
+            {/* Hakukenttä ja suodatus */}
+            <div className="header">
+                <input
+                    type="text"
+                    value={searchTerm}
+                    placeholder="Search from shown data"
+                    onChange={(e) => setSearchTerm(e.target.value)} // Päivittää hakusanan
+                />
+                <div>
+                    <button onClick={clearSearchInput}>
+                        Clear search input
+                    </button>
+                </div>
+                {/* Suodatus oikealla */}
+                <div className="filters">
+                    <label>
+                        <input type="checkbox" checked={validOnly} onChange={toggleFilter} />
+                        Show only complete data
+                    </label>
+
+                    <div className="select-year">
+                        <label>
+                            Select Year:
+                            <select value={year ?? ""} onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}>
+                                <option value="">All years</option>
+                                <option value="2020">2020</option>
+                                <option value="2021">2021</option>
+                                <option value="2022">2022</option>
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div>
+                        <button onClick={clearFilters}>
+                            Clear filters
+                        </button>
+                    </div>
+                </div>
             </div>
             <table border={1}>
                 <thead>
