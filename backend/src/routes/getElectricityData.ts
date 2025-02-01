@@ -16,24 +16,16 @@ router.get("/stats", async (req, res: Response) => {
 
   const offset = (page - 1) * limit;  // Lasketaan mistä rivistä aloitetaan
 
-  console.log('Page:', page); // Debugging
-  console.log('Limitsourcewwwww:', req.query.limit); // Debugging
-
   // Tarkistetaan, haetaanko kaikki rivit (jos limit=0, poistetaan sivutus)
 
   const fetchAll = limit === 0;
 
-  // Tarkistetaan, haetaanko kaikki rivit
-  if (fetchAll) {
-    console.log('Haetaan kaikki rivit');  // Debugging
-  } else {
-    console.log(`Haetaan sivu ${page} ja rajoitetaan ${limit} rivillä`);  // Debugging
-  }
 
-
+  // Lisätään suodatusmahdollisuus
+  const validOnly = req.query.validOnly === "true"; 
 
   try {
-    const result = await pool.query(`
+    const query = `
       WITH NegativeStreaks AS (
           SELECT
               date,
@@ -57,7 +49,7 @@ router.get("/stats", async (req, res: Response) => {
       StreakDurations AS (
           SELECT
               date,
-              MAX(streak_length) AS longest_negative_streak  -- Varmistetaan vain yksi rivi per päivä
+              MAX(streak_length) AS longest_negative_streak
           FROM (
               SELECT date, streak_group, COUNT(*) AS streak_length
               FROM StreaksWithGroup
@@ -74,12 +66,14 @@ router.get("/stats", async (req, res: Response) => {
           COALESCE(s.longest_negative_streak, 0) AS longest_negative_streak
       FROM electricityData e
       LEFT JOIN StreakDurations s ON e.date = s.date
+      ${validOnly ? "WHERE e.consumptionAmount IS NOT NULL AND e.productionAmount IS NOT NULL AND e.hourlyPrice IS NOT NULL" : ""}
       GROUP BY e.date, s.longest_negative_streak
       ORDER BY e.date
-      ${fetchAll ? "" : "LIMIT $1 OFFSET $2"};  -- Poistetaan LIMIT/OFFSET jos haetaan kaikki
-    `,
-      fetchAll ? [] : [limit, offset] // Parametrit vain jos sivutus käytössä
-    );
+      ${fetchAll ? "" : "LIMIT $1 OFFSET $2"};
+    `;
+
+    const params = fetchAll ? [] : [limit, offset];
+    const result = await pool.query(query, params);
 
     res.json(result.rows);
   } catch (error) {
