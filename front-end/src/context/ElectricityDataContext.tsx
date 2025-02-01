@@ -146,6 +146,10 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             setSearchFilteredData((prev) => [...prev, ...fetchData]);
             setPage((prev) => prev + 1); // Siirrytään seuraavalle sivulle
             setItemsLoaded((prev) => prev + fetchData.length);
+            if (fetchData.length < limit) {
+                setAllDataLoaded(true); // Merkitään, että kaikki data on ladattu
+                return;
+            }
         } catch (err) {
             setError("Failed to load electricity data.");
         } finally {
