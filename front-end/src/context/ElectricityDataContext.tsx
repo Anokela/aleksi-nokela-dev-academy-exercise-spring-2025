@@ -19,6 +19,9 @@ interface ElectricityDataContextType {
     validOnly: boolean;
     itemsLoaded: number;
     searchTerm: string;
+    sortColumn: string | null;
+    sortDirection: "asc" | "desc";
+    sortData: (column: keyof ElectricityData) => void;
     setSearchTerm: (term: string) => void;
     toggleFilter: () => void;
     loadMoreData: () => Promise<void>;
@@ -41,6 +44,8 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
     const [itemsLoaded, setItemsLoaded] = useState<number>(25);
     const [searchTerm, setSearchTerm] = useState<string>('');  // Hakusanatila
     const [pageInitiated, setPageInitiated] = useState(false);
+    const [sortColumn, setSortColumn] = useState<string | null>(null);  // Sarake, jota lajitellaan
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");  // Lajittelusuunta
     const limit: number = 25;
 
     // Lataa data alussa tai filtterin vaihtuessa
@@ -78,7 +83,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         try {
             const fetchData = await fetchElectricityData(1, limit, validOnly);
             setData(fetchData);
-            setSearchFilteredData(fetchData); 
+            setSearchFilteredData(fetchData);
             setPage(2); // Seuraava haku alkaa sivulta 2
             setItemsLoaded(limit); // Ensimmäinen haku = 25 riviä
             setAllDataLoaded(false); // Resetoi "kaikki ladattu" tilan
@@ -88,21 +93,49 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         } finally {
             setLoading(false);
         }
-    }
+    };
+
+    function sortData(column: keyof ElectricityData) {
+        const direction = sortColumn === column && sortDirection === "asc" ? "desc" : "asc";
+        setSortColumn(column);
+        setSortDirection(direction);
+
+        const sortedData = [...searchFilteredData].sort((a, b) => {
+            // Haetaan kenttäarvot
+            const aValue = a[column] ?? "";
+            const bValue = b[column] ?? "";
+
+            // Tarkistetaan, ovatko arvot numeerisia
+            const isNumeric = (value: any) => !isNaN(value) && value !== null && value !== "";
+
+            // Jos arvot ovat numeerisia, muunnetaan ne numeroiksi
+            const aNumeric = isNumeric(aValue) ? Number(aValue) : aValue;
+            const bNumeric = isNumeric(bValue) ? Number(bValue) : bValue;
+
+            // Vertailu
+            if (direction === "asc") {
+                return aNumeric < bNumeric ? -1 : 1;
+            } else {
+                return aNumeric < bNumeric ? 1 : -1;
+            }
+        });
+
+        setSearchFilteredData(sortedData);
+    };
 
     async function reloadFilteredData() {
         setLoading(true);
         try {
             const fetchData = await fetchElectricityData(1, itemsLoaded, validOnly);
             setData(fetchData);
-            setSearchFilteredData(fetchData); 
+            setSearchFilteredData(fetchData);
             setPage(Math.ceil(itemsLoaded / limit) + 1); // Lasketaan seuraava sivu
         } catch (err) {
             setError("Failed to load electricity data.");
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     // Lataa seuraavan erän (lisätään perään)
     async function loadMoreData() {
@@ -110,7 +143,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         try {
             const fetchData = await fetchElectricityData(page, limit, validOnly);
             setData((prev) => [...prev, ...fetchData]); // Lisätään uudet rivit perään
-            setSearchFilteredData((prev) => [...prev, ...fetchData]); 
+            setSearchFilteredData((prev) => [...prev, ...fetchData]);
             setPage((prev) => prev + 1); // Siirrytään seuraavalle sivulle
             setItemsLoaded((prev) => prev + fetchData.length);
         } catch (err) {
@@ -128,7 +161,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             const fetchData = await fetchElectricityData(1, 0, validOnly); // 0 hakee kaikki rivit
             console.log('Vastaanotettu data', fetchData);  // Tarkistetaan, että saamme dataa
             setData(fetchData); // Korvataan data, koska halutaan näyttää kaikki kerralla
-            setSearchFilteredData(fetchData); 
+            setSearchFilteredData(fetchData);
             setAllDataLoaded(true); // Merkitään, että kaikki data on ladattu
             setItemsLoaded(fetchData.length);
             setPage(1); // Nollataan sivutus, ettei Load More riko logiikkaa
@@ -148,7 +181,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
 
     return (
         <ElectricityDataContext.Provider
-            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
+            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, sortColumn, sortDirection, sortData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
         >
             {children}
         </ElectricityDataContext.Provider>

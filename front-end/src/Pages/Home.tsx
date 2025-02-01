@@ -3,11 +3,11 @@ import { useElectricityData } from "../context/ElectricityDataContext";
 import { Link } from "react-router-dom";
 
 const Home: React.FC = () => {
-    const { error, loading, allDataLoaded, validOnly, searchFilteredData, searchTerm, setSearchTerm, toggleFilter, fetchInitialData, loadMoreData, loadAllData } = useElectricityData();
+    const { error, loading, allDataLoaded, validOnly, searchFilteredData, searchTerm, sortColumn, sortDirection, sortData, setSearchTerm, toggleFilter, fetchInitialData, loadMoreData, loadAllData } = useElectricityData();
     const NO_DATA_MESSAGE = "No data available";
 
-     // Tallennetaan scrollin sijainti ennen siirtymistä pois
-     const saveScrollPosition = () => {
+    // Tallennetaan scrollin sijainti ennen siirtymistä pois
+    const saveScrollPosition = () => {
         sessionStorage.setItem("scrollPosition", String(window.scrollY));
     };
 
@@ -38,11 +38,35 @@ const Home: React.FC = () => {
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Date</th>
-                        <th>Total Consumption (kWh)</th>
-                        <th>Total Production (MWh)</th>
-                        <th>Average Price (€)</th>
-                        <th>Longest Negative Price Streak (h)</th>
+                        <th>
+                            <button onClick={() => sortData("date")}>
+                                Date {sortColumn === "date" && (sortDirection === "asc" ? "↑" : "↓")}
+                            </button>
+                        </th>
+                        <th>
+                            <button onClick={() => sortData("total_consumption")}>
+                                Total Consumption (kWh)
+                                {sortColumn === "total_consumption" && (sortDirection === "asc" ? "↑" : "↓")}
+                            </button>
+                        </th>
+                        <th>
+                            <button onClick={() => sortData("total_production")}>
+                                Total Production (MWh)
+                                {sortColumn === "total_production" && (sortDirection === "asc" ? "↑" : "↓")}
+                            </button>
+                        </th>
+                        <th>
+                            <button onClick={() => sortData("avg_price")}>
+                                Average Price (€)
+                                {sortColumn === "avg_price" && (sortDirection === "asc" ? "↑" : "↓")}
+                            </button>
+                        </th>
+                        <th>
+                            <button onClick={() => sortData("longest_negative_streak")}>
+                                Longest Negative Price Streak (h)
+                                {sortColumn === "longest_negative_streak" && (sortDirection === "asc" ? "↑" : "↓")}
+                            </button>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -67,7 +91,7 @@ const Home: React.FC = () => {
                         {loading ? "Loading..." : "Show all"}
                     </button>
                 </div>
-            ): (
+            ) : (
                 <div>
                     <button onClick={fetchInitialData} disabled={loading}>
                         {loading ? "Loading..." : "Show initial data"}
