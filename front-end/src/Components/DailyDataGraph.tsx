@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// Määritellään tuntikohtaisen datan tyyppi
+// Hourly data types
 interface HourlyData {
-  time: string;      // Tunti
-  consumption: string;  // Kulutus (string, mutta muutetaan numeroksi kaaviossa)
-  production: string;   // Tuotanto (string, mutta muutetaan numeroksi kaaviossa)
-  price: string;        // Hinta (string, mutta muutetaan numeroksi kaaviossa)
+  time: string;
+  consumption: string;  // string, changed to number in graph
+  production: string;   // string, changed to number in graph
+  price: string;        // string, changed to number in graph
 }
 
-// Tyypitään propit, joita `DailyDataGraph`-komponentti odottaa
+// Types for DailyDataGraphProps
 interface DailyDataGraphProps {
   data: {
     date: string;
@@ -23,10 +23,10 @@ interface DailyDataGraphProps {
 }
 
 const DailyDataGraph: React.FC<DailyDataGraphProps> = ({ data }) => {
-  // Alustetaan valittu data
-  const [selectedData, setSelectedData] = useState<string>('consumption');  // Oletuksena kulutus
+  // Initialize selected data
+  const [selectedData, setSelectedData] = useState<string>('consumption');
 
-  // Muodostetaan kaavion data, jossa muunnamme string-tyyppiset arvot luvuiksi
+  // Initialize data for graph, string data changed to nummber in graph
   const chartData = data.hourly_data.map((item: HourlyData) => ({
     time: item.time,
     consumption: parseFloat(item.consumption),  // Muutetaan kulutus numeeriseksi
@@ -34,62 +34,66 @@ const DailyDataGraph: React.FC<DailyDataGraphProps> = ({ data }) => {
     price: parseFloat(item.price),              // Muutetaan hinta numeeriseksi
   }));
 
+  // Function to shorten long figures (k = thousand, M = million)
+  const formatLargeNumber = (num: number) => {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M`;
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}k`;
+    }
+    return num.toString();
+  };
+
   return (
     <div style={{ height: '400px', marginBottom: '100px' }}>
       <h2>Hourly Electricity Data</h2>
-
-      {/* Radiobuttonit tietojen valintaan */}
       <div style={{ marginBottom: '20px' }}>
         <label>
-          <input 
-            type="radio" 
-            name="data-selection" 
-            value="consumption" 
-            checked={selectedData === 'consumption'} 
-            onChange={() => setSelectedData('consumption')} 
+          <input
+            type="radio"
+            name="data-selection"
+            value="consumption"
+            checked={selectedData === 'consumption'}
+            onChange={() => setSelectedData('consumption')}
           />
           Consumption (kWh)
         </label>
         <label style={{ marginLeft: '15px' }}>
-          <input 
-            type="radio" 
-            name="data-selection" 
-            value="production" 
-            checked={selectedData === 'production'} 
-            onChange={() => setSelectedData('production')} 
+          <input
+            type="radio"
+            name="data-selection"
+            value="production"
+            checked={selectedData === 'production'}
+            onChange={() => setSelectedData('production')}
           />
-          Production (kWh)
+          Production (MWh)
         </label>
         <label style={{ marginLeft: '15px' }}>
-          <input 
-            type="radio" 
-            name="data-selection" 
-            value="price" 
-            checked={selectedData === 'price'} 
-            onChange={() => setSelectedData('price')} 
+          <input
+            type="radio"
+            name="data-selection"
+            value="price"
+            checked={selectedData === 'price'}
+            onChange={() => setSelectedData('price')}
           />
-          Price (€)
+          Price (Cent(€))
         </label>
       </div>
-
-      {/* Responsive Container */}
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="time" />
-          <YAxis />
+          <YAxis tickFormatter={formatLargeNumber} />
           <Tooltip />
           <Legend />
-
-          {/* Näytetään valitun datan mukaan oikea kaavio */}
           {selectedData === 'consumption' && (
             <Line type="monotone" dataKey="consumption" stroke="#8884d8" name="Consumption (kWh)" />
           )}
           {selectedData === 'production' && (
-            <Line type="monotone" dataKey="production" stroke="#82ca9d" name="Production (kWh)" />
+            <Line type="monotone" dataKey="production" stroke="#82ca9d" name="Production (MWh)" />
           )}
           {selectedData === 'price' && (
-            <Line type="monotone" dataKey="price" stroke="#ff7300" name="Price (€)" />
+            <Line type="monotone" dataKey="price" stroke="#ff7300" name="Price (Cent (€))" />
           )}
         </LineChart>
       </ResponsiveContainer>

@@ -1,17 +1,17 @@
 import { Router, Request, Response } from "express";
-import pool from "../db"; // Tuodaan pool tietokantayhteys config.ts:stä
+import pool from "../db"; //import pool from config.ts
 
 const router = Router();
 // Fetch stats for all dates
 // Fetch stats for all dates
 router.get("/stats", async (req, res: Response) => {
-  const page = Number(req.query.page) || 1;   // Muunnetaan numeroksi, oletus 1
+  const page = Number(req.query.page) || 1;   // Changed to mnumber, default 1
   let limit = Number(req.query.limit); 
 
   if (limit === 0) {
     limit = 0;
   } else {
-    limit = limit || 25;  // Oletus 25
+    limit = limit || 25;  // default 25
   }
 
   const offset = (page - 1) * limit;
@@ -132,11 +132,17 @@ router.get("/stats/:date", async (req: Request<{ date: string }>, res: any) => {
       return res.status(404).json({ error: "No data found for the given date" });
     }
 
-    // Leikkaus `cheapest_hours` taulukkoon, jotta saamme vain kolme haluamaamme tuntia
-    const cheapestHours = result.rows[0].cheapest_hours.slice(0, 3);
-    result.rows[0].cheapest_hours = cheapestHours;
+    const row = result.rows[0];
 
-    // Haetaan myös tuntikohtainen raakadata erikseen
+    //Checkif there's data in hourlyPrice
+    if (row.avg_price === null || row.avg_price === 0) {
+      row.cheapest_hours = []; // If no price values, no cheapest_hours
+    } else {
+      // slice 3 most cheapest hour-values
+      row.cheapest_hours = row.cheapest_hours.slice(0, 3);
+    }
+
+    // Fetch hourly raw-data
     const hourlyDataResult = await pool.query(`
       SELECT 
           TO_CHAR(startTime, 'HH24:MI') AS time,
@@ -148,10 +154,10 @@ router.get("/stats/:date", async (req: Request<{ date: string }>, res: any) => {
       ORDER BY startTime;
     `, [date]);
 
-    // Lisätään raakadata JSON-vastaukseen
-    result.rows[0].hourly_data = hourlyDataResult.rows;
+    // Add  rawdata to json-response
+    row.hourly_data = hourlyDataResult.rows;
 
-    res.json(result.rows[0]);
+    res.json(row);
   } catch (error) {
     console.error("Error fetching single day electricity stats:", error);
     res.status(500).json({ error: "Internal server error" });

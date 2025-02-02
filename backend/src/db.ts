@@ -1,4 +1,4 @@
-import "./config";  // Ladataan ympäristömuuttujat ennen kuin tietokantayhteys muodostetaan
+import "./config";  // Load environmental variables befor db connection
 import { Pool } from "pg";
 
 const pool = new Pool({

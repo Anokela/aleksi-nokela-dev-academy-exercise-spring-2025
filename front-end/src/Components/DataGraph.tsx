@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useElectricityData } from '../context/ElectricityDataContext'; // Jos käytät contextia datan hallintaan
+import { useElectricityData } from '../context/ElectricityDataContext';
+import { Card, CardContent, Typography, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 
 const DataGraph: React.FC = () => {
-  const { searchFilteredData } = useElectricityData(); // Haetaan suodatettu data kontekstista
-  const [selectedData, setSelectedData] = useState<string>('total_consumption'); // Aluksi valitaan "total_consumption"const [selectedData, setSelectedData] = useState<string>('total_consumption'); // Aluksi valitaan "total_consumption"
-  // Varmistetaan, että data on saatavilla ennen kuin kaavio luodaan
+  const { searchFilteredData } = useElectricityData();
+  const [selectedData, setSelectedData] = useState<string>('total_consumption');
+
   if (!searchFilteredData || searchFilteredData.length === 0) {
-    return <div>No data available for visualization.</div>;
+    return <Typography fontSize={30} style={{ padding: '30px' }}>No data available for visualization.</Typography>;
   }
 
-  console.log(searchFilteredData);
-
-  // Muodostetaan kaavion data
+  // Creqate data for graph
   const chartData = searchFilteredData.map((item) => ({
     date: item.date,
     total_consumption: parseFloat(item.total_consumption ?? '0'),
@@ -21,76 +20,60 @@ const DataGraph: React.FC = () => {
     longest_negative_streak: item.longest_negative_streak ?? '0',
   }));
 
+  // Function to shorten long figures (k = thousand, M = million)
+  function formatLargeNumber(num: number) {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M`;
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}k`;
+    }
+    return num.toString();
+  };
+
   const renderLine = () => {
     switch (selectedData) {
       case 'total_consumption':
-        return <Line type="monotone" dataKey="total_consumption" stroke="#8884d8" />;
+        return <Line type="monotone" dataKey="total_consumption" stroke="#8884d8" name='Total consumption (kWh)' />;
       case 'total_production':
-        return <Line type="monotone" dataKey="total_production" stroke="#82ca9d" />;
+        return <Line type="monotone" dataKey="total_production" stroke="#82ca9d" name='Total production (MWh)' />;
       case 'avg_price':
-        return <Line type="monotone" dataKey="avg_price" stroke="#ff7300" />;
+        return <Line type="monotone" dataKey="avg_price" stroke="#ff7300" name='Average price (Cent (€))' />;
       case 'longest_negative_streak':
-        return <Line type="monotone" dataKey="longest_negative_streak" stroke="#d12f2f" />;
+        return <Line type="monotone" dataKey="longest_negative_streak" stroke="#d12f2f" name='Longest streak of hours when negative price' />;
       default:
         return null;
     }
   };
 
   return (
-    <div style={{ height: '400px', marginBottom: '100px' }}>
-      <h2>Electricity Consumption Over Time</h2>
+    <Card sx={{ marginBottom: 4, padding: 2 }}>
+      <CardContent>
+        <Typography variant="h5" gutterBottom>
+          Electricity Consumption Over Time
+        </Typography>
 
-      {/* Radio buttons valinnan tekemiseen */}
-      <div>
-        <label>
-          <input
-            type="radio"
-            value="total_consumption"
-            checked={selectedData === 'total_consumption'}
-            onChange={() => setSelectedData('total_consumption')}
-          />
-          Total Consumption
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="total_production"
-            checked={selectedData === 'total_production'}
-            onChange={() => setSelectedData('total_production')}
-          />
-          Total Production
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="avg_price"
-            checked={selectedData === 'avg_price'}
-            onChange={() => setSelectedData('avg_price')}
-          />
-          Average Price
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="longest_negative_streak"
-            checked={selectedData === 'longest_negative_streak'}
-            onChange={() => setSelectedData('longest_negative_streak')}
-          />
-          Longest Negative Streak
-        </label>
-      </div>
+        <FormControl component="fieldset" sx={{ marginBottom: 2 }}>
+          <FormLabel component="legend">Select Data Type</FormLabel>
+          <RadioGroup row value={selectedData} onChange={(e) => setSelectedData(e.target.value)}>
+            <FormControlLabel value="total_consumption" control={<Radio />} label="Total Consumption" />
+            <FormControlLabel value="total_production" control={<Radio />} label="Total Production" />
+            <FormControlLabel value="avg_price" control={<Radio />} label="Average Price" />
+            <FormControlLabel value="longest_negative_streak" control={<Radio />} label="Longest Negative Streak" />
+          </RadioGroup>
+        </FormControl>
 
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          {renderLine()}
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis tickFormatter={formatLargeNumber} /> {/* Lisää tickFormatter Y-akselille */}
+            <Tooltip />
+            <Legend />
+            {renderLine()}
+          </LineChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   );
 };
 

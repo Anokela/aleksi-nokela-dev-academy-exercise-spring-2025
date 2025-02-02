@@ -1,3 +1,3 @@
 import dotenv from "dotenv";
-// Ladataan ympäristömuuttujat
+// Load environmental variables
 dotenv.config();

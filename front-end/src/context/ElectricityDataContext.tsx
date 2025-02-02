@@ -22,6 +22,7 @@ interface ElectricityDataContextType {
     sortColumn: string | null;
     sortDirection: "asc" | "desc";
     year: number | null;
+    limit: number;
     setYear: (year: number | null) => void;
     sortData: (column: keyof ElectricityData) => void;
     setSearchTerm: (term: string) => void;
@@ -39,7 +40,7 @@ const ElectricityDataContext = createContext<ElectricityDataContextType | undefi
 // Provider-komponentti
 export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [data, setData] = useState<ElectricityData[]>([]);
-    const [searchFilteredData, setSearchFilteredData] = useState<ElectricityData[]>([]); // Filtteröity data
+    const [searchFilteredData, setSearchFilteredData] = useState<ElectricityData[]>([]); // Filtered data
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState<number>(1);
     const [loading, setLoading] = useState<boolean>(false);
@@ -47,13 +48,13 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
     const [validOnly, setValidOnly] = useState<boolean>(true); // set to fetch only rows with valid data by default
     const [itemsLoaded, setItemsLoaded] = useState<number>(25);
     const [year, setYear] = useState<number | null>(null);
-    const [searchTerm, setSearchTerm] = useState<string>('');  // Hakusanatila
+    const [searchTerm, setSearchTerm] = useState<string>('');
     const [pageInitiated, setPageInitiated] = useState(false);
-    const [sortColumn, setSortColumn] = useState<string | null>(null);  // Sarake, jota lajitellaan
-    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");  // Lajittelusuunta
+    const [sortColumn, setSortColumn] = useState<string | null>(null);  // Column to be sorted
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");  // Sortdirections
     const limit: number = 25;
 
-    // Lataa data alussa tai filtterin vaihtuessa
+    // Load data initially and when filter changes
     useEffect(() => {
         if (!pageInitiated) {
             fetchInitialData();
@@ -65,9 +66,9 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             reloadFilteredData();
         }
 
-    }, [validOnly,year]); // Kun filtteri muuttuu, haetaan data uudestaan
+    }, [validOnly, year]); // Load data again when/if filter changes
 
-    // Hakee ja suodattaa dataa hakusanan mukaan
+    // Search and filter data using search
     useEffect(() => {
         if (searchTerm) {
             const filtered = data.filter((item) =>
@@ -79,7 +80,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             );
             setSearchFilteredData(filtered);
         } else {
-            setSearchFilteredData(data);  // Jos ei hakusanaa, palautetaan kaikki data
+            setSearchFilteredData(data);  // If no search word, return all data
         }
     }, [searchTerm, data]);
 
@@ -89,9 +90,9 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             const fetchData = await fetchElectricityData(1, limit, validOnly, year);
             setData(fetchData);
             setSearchFilteredData(fetchData);
-            setPage(2); // Seuraava haku alkaa sivulta 2
-            setItemsLoaded(limit); // Ensimmäinen haku = 25 riviä
-            setAllDataLoaded(false); // Resetoi "kaikki ladattu" tilan
+            setPage(2); // Next  load starts from page 2
+            setItemsLoaded(limit); // First load
+            setAllDataLoaded(false); // Reset all data loaded state
             setPageInitiated(true);
         } catch (err) {
             setError("Failed to load electricity data.");
@@ -106,18 +107,17 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         setSortDirection(direction);
 
         const sortedData = [...searchFilteredData].sort((a, b) => {
-            // Haetaan kenttäarvot
             const aValue = a[column] ?? "";
             const bValue = b[column] ?? "";
 
-            // Tarkistetaan, ovatko arvot numeerisia
+            // Check if valueas are numeric
             const isNumeric = (value: any) => !isNaN(value) && value !== null && value !== "";
 
-            // Jos arvot ovat numeerisia, muunnetaan ne numeroiksi
+            // If numeric, change to type number
             const aNumeric = isNumeric(aValue) ? Number(aValue) : aValue;
             const bNumeric = isNumeric(bValue) ? Number(bValue) : bValue;
 
-            // Vertailu
+            // Coparison
             if (direction === "asc") {
                 return aNumeric < bNumeric ? -1 : 1;
             } else {
@@ -134,7 +134,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             const fetchData = await fetchElectricityData(1, itemsLoaded, validOnly, year);
             setData(fetchData);
             setSearchFilteredData(fetchData);
-            setPage(Math.ceil(itemsLoaded / limit) + 1); // Lasketaan seuraava sivu
+            setPage(Math.ceil(itemsLoaded / limit) + 1); // calculate next page
         } catch (err) {
             setError("Failed to load electricity data.");
         } finally {
@@ -147,12 +147,12 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         setLoading(true);
         try {
             const fetchData = await fetchElectricityData(page, limit, validOnly, year);
-            setData((prev) => [...prev, ...fetchData]); // Lisätään uudet rivit perään
+            setData((prev) => [...prev, ...fetchData]); //Add new rows
             setSearchFilteredData((prev) => [...prev, ...fetchData]);
-            setPage((prev) => prev + 1); // Siirrytään seuraavalle sivulle
+            setPage((prev) => prev + 1); // Move to next page
             setItemsLoaded((prev) => prev + fetchData.length);
             if (fetchData.length < limit) {
-                setAllDataLoaded(true); // Merkitään, että kaikki data on ladattu
+                setAllDataLoaded(true); // If all available data is loaded
                 return;
             }
         } catch (err) {
@@ -163,19 +163,16 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
     }
 
     async function loadAllData() {
-        // if (allDataLoaded) return; // Estetään toistuvat pyynnöt, jos kaikki data on jo ladattu
-        console.log('Ladataan kaikki data');  // Debugging
         setLoading(true);
         try {
-            const fetchData = await fetchElectricityData(1, 0, validOnly, year); // 0 hakee kaikki rivit
-            console.log('Vastaanotettu data', fetchData);  // Tarkistetaan, että saamme dataa
-            setData(fetchData); // Korvataan data, koska halutaan näyttää kaikki kerralla
+            const fetchData = await fetchElectricityData(1, 0, validOnly, year); // 0 fetches all rows
+            setData(fetchData); // set data with all data
             setSearchFilteredData(fetchData);
-            setAllDataLoaded(true); // Merkitään, että kaikki data on ladattu
+            setAllDataLoaded(true); // update state that all data is loaded
             setItemsLoaded(fetchData.length);
-            setPage(1); // Nollataan sivutus, ettei Load More riko logiikkaa
+            setPage(1); // Reset paging
         } catch (err) {
-            console.error('Virhe ladattaessa dataa', err);  // Debugging virhe
+            console.error('Virhe ladattaessa dataa', err);
             setError("Failed to load all electricity data.");
         } finally {
             setLoading(false);
@@ -199,14 +196,13 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
 
     return (
         <ElectricityDataContext.Provider
-            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, sortColumn, sortDirection, year,clearSearchInput, clearFilters, setYear, sortData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
+            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, sortColumn, sortDirection, year, limit, clearSearchInput, clearFilters, setYear, sortData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
         >
             {children}
         </ElectricityDataContext.Provider>
     );
 };
 
-// Custom hook
 export const useElectricityData = () => {
     const context = useContext(ElectricityDataContext);
     if (!context) throw new Error("useElectricityData must be used within ElectricityDataProvider");

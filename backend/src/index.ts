@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import getElectricityData from "./routes/getElectricityData";
-import "./config";  // Varmistetaan, että ympäristömuuttujat on ladattu
+import "./config";
 
 const app = express();
 const port = process.env.PORT || 5000;

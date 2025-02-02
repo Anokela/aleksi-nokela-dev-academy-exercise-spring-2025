@@ -47,4 +47,11 @@ export default tseslint.config({
     ...react.configs['jsx-runtime'].rules,
   },
 })
+
+3.Frontend:
+1. cd front-end -- navigate to front-end-folder
+2. npm install -- install front-end dependacies
+4. If not exist create .env to root file with data: 
+    VITE_API_URL=http://localhost:5000/api
+3. npm run dev -- start frontend locally
 ```
