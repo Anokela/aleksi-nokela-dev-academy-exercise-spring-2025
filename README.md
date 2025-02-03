@@ -18,6 +18,9 @@
     REACT_APP_API_URL=http://localhost:5000
 4. run this command in backend-folder: docker compose -f docker-compose.backend.yml up --build
     -- this is to mount backend backend in docker container. HOX database must also be cloned and running in the docker container
+     OR 
+    run: docker compose -f docker-compose.backend.yml up --build -d
+    -- without logs in terminal
 6. Backend can also be started locally by command: npm run dev
 
 3.Frontend:
