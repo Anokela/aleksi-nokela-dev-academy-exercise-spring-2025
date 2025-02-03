@@ -75,6 +75,7 @@ const Home: React.FC = () => {
                                 control={<Checkbox checked={validOnly} onChange={toggleFilter} />}
                                 label="Show only rows with complete data"
                                 sx={{ marginRight: 2 }}
+                                id="onlyValidDataFilter"
                             />
                             <Select
                                 value={year ?? ""}
@@ -100,8 +101,9 @@ const Home: React.FC = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             sx={{ marginTop: 2, width: 300 }}
+                            id="searchDataInput"
                         />
-                        <Button variant="contained" onClick={clearSearchInput} sx={{ marginTop: 2 }}>
+                        <Button id="clearSearchInputButton" variant="contained" onClick={clearSearchInput} sx={{ marginTop: 2 }}>
                             Clear search input
                         </Button>
                     </div>
@@ -167,7 +169,7 @@ const Home: React.FC = () => {
                                         <TableRow key={index}>
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>
-                                                <Link to={`/detail/${day.date}`} onClick={saveScrollPosition}>
+                                                <Link id={`date-link-${day.date}`} to={`/detail/${day.date}`} onClick={saveScrollPosition}>
                                                     {day.date}
                                                 </Link>
                                             </TableCell>
@@ -197,15 +199,15 @@ const Home: React.FC = () => {
                     <div className="fixed-buttons">
                         {!allDataLoaded ? (
                             <>
-                                <Button variant="contained" onClick={loadMoreData} disabled={loading} sx={{ marginRight: 2 }}>
+                                <Button id="loadMoreButton" variant="contained" onClick={loadMoreData} disabled={loading} sx={{ marginRight: 2 }}>
                                     {loading ? "Loading..." : `Load ${limit} more rows`}
                                 </Button>
-                                <Button variant="contained" onClick={loadAllData} disabled={loading}>
+                                <Button id="loadAllButton" variant="contained" onClick={loadAllData} disabled={loading}>
                                     {loading ? "Loading..." : "Load all data"}
                                 </Button>
                             </>
                         ) : (
-                            <Button color="inherit" variant="contained" onClick={fetchInitialData} disabled={loading}>
+                            <Button id='loadInitialDataButton' color="inherit" variant="contained" onClick={fetchInitialData} disabled={loading}>
                                 {loading ? "Loading..." : `Show first ${limit} rows`}
                             </Button>
                         )}

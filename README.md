@@ -58,3 +58,10 @@ Database consists of one table electricityData.
 | productionAmount | Electricity production for the hour MWh/h | NUMERIC(11,5) *NULL* |
 | consumptionAmount | Electricity consumption for the hour kWh | NUMERIC(11,3) *NULL* |
 | hourlyPrice | Electricity price for the hour | NUMERIC(6,3) *NULL* |
+
+5.End-to-end tests
+1. cd e2e -- navigate to e2e folder
+2. npm install -- install dependancies
+3. run tests via command line: npm run cypress:run OR npx cypress run
+OR
+   run tests using Cyprecc GUI: npm run cypress:open OR npx cypress open
