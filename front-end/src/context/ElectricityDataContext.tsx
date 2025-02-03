@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { fetchElectricityData } from "../api/getElectricityDataApi";
 
-// Tyyppimääritykset
+// Types for data
 interface ElectricityData {
     date: string;
     total_consumption: string | null;
@@ -9,7 +9,7 @@ interface ElectricityData {
     avg_price: string | null;
     longest_negative_streak: number;
 }
-
+// types for Context
 interface ElectricityDataContextType {
     searchFilteredData: ElectricityData[];
     error: string | null;
@@ -17,7 +17,6 @@ interface ElectricityDataContextType {
     loading: boolean;
     allDataLoaded: boolean;
     validOnly: boolean;
-    itemsLoaded: number;
     searchTerm: string;
     sortColumn: string | null;
     sortDirection: "asc" | "desc";
@@ -34,51 +33,51 @@ interface ElectricityDataContextType {
     clearFilters: () => void;
 }
 
-// Context
+// Context to use in different pages
 const ElectricityDataContext = createContext<ElectricityDataContextType | undefined>(undefined);
 
-// Provider-komponentti
+// Provider-component
 export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [data, setData] = useState<ElectricityData[]>([]);
-    const [searchFilteredData, setSearchFilteredData] = useState<ElectricityData[]>([]); // Filtered data
-    const [error, setError] = useState<string | null>(null);
-    const [page, setPage] = useState<number>(1);
+    const [data, setData] = useState<ElectricityData[]>([]); // raw data
+    const [searchFilteredData, setSearchFilteredData] = useState<ElectricityData[]>([]); // Filtered data for rendering the ui
+    const [error, setError] = useState<string | null>(null); // error message
+    const [page, setPage] = useState<number>(1); // paging, default value 1
     const [loading, setLoading] = useState<boolean>(false);
-    const [allDataLoaded, setAllDataLoaded] = useState<boolean>(false);
-    const [validOnly, setValidOnly] = useState<boolean>(true); // set to fetch only rows with valid data by default
-    const [itemsLoaded, setItemsLoaded] = useState<number>(25);
-    const [year, setYear] = useState<number | null>(null);
-    const [searchTerm, setSearchTerm] = useState<string>('');
-    const [pageInitiated, setPageInitiated] = useState(false);
+    const [allDataLoaded, setAllDataLoaded] = useState<boolean>(false); // boolean to tell if user has loaded all data
+    const [validOnly, setValidOnly] = useState<boolean>(true); // set to filtering only rows with valid data by default
+    const [itemsLoaded, setItemsLoaded] = useState<number>(25); // variable needed to fetch same number of items when user changes differet filters
+    const [year, setYear] = useState<number | null>(null); // for filtering data by specific year
+    const [searchTerm, setSearchTerm] = useState<string>(''); // for searching from data
+    const [pageInitiated, setPageInitiated] = useState(false); // to check if to search only the initial data
     const [sortColumn, setSortColumn] = useState<string | null>(null);  // Column to be sorted
-    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");  // Sortdirections
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");  // Sort directions
     const limit: number = 25;
 
     // Load data initially and when filter changes
     useEffect(() => {
         if (!pageInitiated) {
-            fetchInitialData();
+            fetchInitialData(); // search only initial data
             return;
         }
         if (allDataLoaded) {
             loadAllData(); // If user has searched all data, search again when filter state changed
         } else {
-            reloadFilteredData();
+            reloadFilteredData(); // fetch data when filters are changed and not all data is loaded all data
         }
 
     }, [validOnly, year]); // Load data again when/if filter changes
 
-    // Search and filter data using search
+    // Search and filter loaded data using search by date 
     useEffect(() => {
         if (searchTerm) {
             const filtered = data.filter((item) =>
-                item.date.includes(searchTerm) ||
+                item.date.includes(searchTerm) || 
                 item.total_consumption?.includes(searchTerm) ||
                 item.total_production?.includes(searchTerm) ||
                 item.avg_price?.includes(searchTerm) ||
                 item.longest_negative_streak.toString().includes(searchTerm)
             );
-            setSearchFilteredData(filtered);
+            setSearchFilteredData(filtered); // set filtered data to render
         } else {
             setSearchFilteredData(data);  // If no search word, return all data
         }
@@ -100,7 +99,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             setLoading(false);
         }
     };
-
+    // function for sorting data columns
     function sortData(column: keyof ElectricityData) {
         const direction = sortColumn === column && sortDirection === "asc" ? "desc" : "asc";
         setSortColumn(column);
@@ -117,7 +116,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             const aNumeric = isNumeric(aValue) ? Number(aValue) : aValue;
             const bNumeric = isNumeric(bValue) ? Number(bValue) : bValue;
 
-            // Coparison
+            // Comparison
             if (direction === "asc") {
                 return aNumeric < bNumeric ? -1 : 1;
             } else {
@@ -127,7 +126,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
 
         setSearchFilteredData(sortedData);
     };
-
+    // function to fetch data when filters are toggled/changed and not all data is loaded e.g. handle that same amount of rows are returned from db
     async function reloadFilteredData() {
         setLoading(true);
         try {
@@ -142,7 +141,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
         }
     };
 
-    // Lataa seuraavan erän (lisätään perään)
+    // function to load next batch of data
     async function loadMoreData() {
         setLoading(true);
         try {
@@ -161,7 +160,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             setLoading(false);
         }
     }
-
+    // function to load all data rows, filtered or not
     async function loadAllData() {
         setLoading(true);
         try {
@@ -178,17 +177,17 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
             setLoading(false);
         }
     }
-
+    // function to toggle filter to fetch only valid data or not
     function toggleFilter() {
         setValidOnly(!validOnly);
         setData([]);
         setPage(1);
     };
-
+    // Clear search input
     function clearSearchInput() {
         setSearchTerm('');
     };
-
+    // clear all filters
     function clearFilters() {
         setValidOnly(false);
         setYear(null);
@@ -196,7 +195,7 @@ export const ElectricityDataProvider: React.FC<{ children: React.ReactNode }> = 
 
     return (
         <ElectricityDataContext.Provider
-            value={{ error, page, loading, allDataLoaded, validOnly, itemsLoaded, searchTerm, searchFilteredData, sortColumn, sortDirection, year, limit, clearSearchInput, clearFilters, setYear, sortData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
+            value={{ error, page, loading, allDataLoaded, validOnly, searchTerm, searchFilteredData, sortColumn, sortDirection, year, limit, clearSearchInput, clearFilters, setYear, sortData, setSearchTerm, toggleFilter, loadMoreData, loadAllData, fetchInitialData, }}
         >
             {children}
         </ElectricityDataContext.Provider>
