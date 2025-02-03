@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  backend:
+    build: .
+    container_name: electricity-backend
+    restart: always
+    environment:
+      PORT: 5000
+      DB_HOST: host.docker.internal  # Connection to hostcomputer database
+      DB_PORT: 5432
+      DB_USER: academy
+      DB_PASSWORD: academy
+      DB_NAME: electricity
+    ports:
+      - "5000:5000"
+    depends_on: []
