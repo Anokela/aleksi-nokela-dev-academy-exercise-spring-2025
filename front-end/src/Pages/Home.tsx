@@ -226,7 +226,7 @@ const Home: React.FC = () => {
                                     {loading ? "Loading..." : `Load ${limit} more rows`}
                                 </Button>
                                 <Button id="loadAllButton" variant="contained" onClick={loadAllData} disabled={loading}>
-                                    {loading ? "Loading..." : "Load all data"}
+                                    {loading ? "Loading..." : "Load all rows"}
                                 </Button>
                             </>
                         ) : (
