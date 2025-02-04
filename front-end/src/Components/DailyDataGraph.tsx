@@ -29,9 +29,9 @@ const DailyDataGraph: React.FC<DailyDataGraphProps> = ({ data }) => {
   // Initialize data for graph, string data changed to nummber in graph
   const chartData = data.hourly_data.map((item: HourlyData) => ({
     time: item.time,
-    consumption: parseFloat(item.consumption),  // Muutetaan kulutus numeeriseksi
-    production: parseFloat(item.production),    // Muutetaan tuotanto numeeriseksi
-    price: parseFloat(item.price),              // Muutetaan hinta numeeriseksi
+    consumption: parseFloat(item.consumption),  // change to numeric
+    production: parseFloat(item.production),    //change to numeric
+    price: parseFloat(item.price),              // change to numeric
   }));
 
   // Function to shorten long figures (k = thousand, M = million)

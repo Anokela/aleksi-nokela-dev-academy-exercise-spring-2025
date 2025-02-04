@@ -66,7 +66,8 @@ const DataGraph: React.FC = () => {
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
-            <YAxis tickFormatter={formatLargeNumber} /> {/* Lisää tickFormatter Y-akselille */}
+            <YAxis tickFormatter={formatLargeNumber} 
+             domain={[0, selectedData === "longest_negative_streak" ? 24 : "auto"]} />
             <Tooltip />
             <Legend />
             {renderLine()}

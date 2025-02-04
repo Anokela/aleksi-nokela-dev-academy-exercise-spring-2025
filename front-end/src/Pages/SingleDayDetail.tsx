@@ -110,6 +110,7 @@ const SingleDayDetail: React.FC = () => {
       )}
 
       <Button
+      id="backHomeButton"
         variant="contained"
         color="primary"
         onClick={() => navigate('/')}

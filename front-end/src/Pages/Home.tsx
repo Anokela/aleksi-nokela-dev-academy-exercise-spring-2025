@@ -18,9 +18,11 @@ import {
     Select,
     MenuItem,
     Typography,
-    CircularProgress
+    CircularProgress,
+    Tooltip
 } from "@mui/material";
 import "./Home.css";
+import { useNavigate } from "react-router-dom";
 
 const Home: React.FC = () => {
     const {
@@ -46,7 +48,13 @@ const Home: React.FC = () => {
     } = useElectricityData();
 
     const NO_DATA_MESSAGE = "No data available";
+    const navigate = useNavigate();
 
+    // function to navigaet to singledaydetailpage when user clicks the data row
+    const handleRowClick = (date: string) => {
+        saveScrollPosition();
+        navigate(`/detail/${date}`);
+    };
     // Save scroll position when navigating off
     const saveScrollPosition = () => {
         sessionStorage.setItem("scrollPosition", String(window.scrollY));
@@ -59,7 +67,7 @@ const Home: React.FC = () => {
             window.scrollTo(0, Number(savedPosition));
         }
     }, []);
-
+    console.log(searchFilteredData);
     return (
         <div className="page-container">
             <h1>Electricity Statistics</h1>
@@ -166,15 +174,30 @@ const Home: React.FC = () => {
                                 </TableHead>
                                 <TableBody>
                                     {searchFilteredData.map((day, index) => (
-                                        <TableRow key={index}>
+                                        <TableRow
+                                            key={index}
+                                            hover
+                                            onClick={() => handleRowClick(day.date)}
+                                            style={{ cursor: "pointer" }}
+                                        >
                                             <TableCell>{index + 1}</TableCell>
                                             <TableCell>
-                                                <Link id={`date-link-${day.date}`} to={`/detail/${day.date}`} onClick={saveScrollPosition}>
-                                                    {day.date}
-                                                </Link>
+                                                <Tooltip title="View daily statistics">
+                                                    <Link
+                                                        id={`date-link-${day.date}`}
+                                                        to={`/detail/${day.date}`}
+                                                        onClick={(e) => {
+                                                            saveScrollPosition();
+                                                            e.stopPropagation(); // prevent whole row clicking event
+                                                        }}
+                                                        style={{ textDecoration: "none", fontWeight: "bold" }}
+                                                    >
+                                                        {day.date}
+                                                    </Link>
+                                                </Tooltip>
                                             </TableCell>
                                             <TableCell>
-                                                {day.total_consumption !== "0"
+                                                {day.total_consumption !== null
                                                     ? Number(day.total_consumption).toFixed(2)
                                                     : NO_DATA_MESSAGE}
                                             </TableCell>
@@ -184,7 +207,7 @@ const Home: React.FC = () => {
                                                     : NO_DATA_MESSAGE}
                                             </TableCell>
                                             <TableCell>
-                                                {day.total_production != null
+                                                {day.avg_price != null
                                                     ? Number(day.avg_price).toFixed(2)
                                                     : NO_DATA_MESSAGE}
                                             </TableCell>

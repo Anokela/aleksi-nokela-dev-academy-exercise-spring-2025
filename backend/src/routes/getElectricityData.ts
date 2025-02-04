@@ -72,7 +72,7 @@ router.get("/stats", async (req, res: Response) => {
           SUM(e.consumptionAmount) AS total_consumption,
           SUM(e.productionAmount) AS total_production,
           AVG(e.hourlyPrice) AS avg_price,
-          COALESCE(s.longest_negative_streak, 0) AS longest_negative_streak
+          COALESCE(s.longest_negative_streak, 0) AS longest_negative_streak --change null-value to 0
       FROM electricityData e
       LEFT JOIN StreakDurations s ON e.date = s.date
       ${whereClause}  -- Added Filterin here
